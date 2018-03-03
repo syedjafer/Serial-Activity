@@ -1,14 +1,5 @@
 import paramiko
-import os
-import json
-import requests
-import urllib
-import getpass
-import time
-from threading import Thread
-import paramiko
-import os
-import logging
+
 
 
 
@@ -26,6 +17,9 @@ try:
 			ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 			ssh_client.connect(hostname=i,username=username,password=password)
 			ssh_client.invoke_shell()
+			
+			ssh_client.exec_command("poweroff")#To only poweroff all systems comment all the upcoming lines . 
+			
 			ssh_client.exec_command ("(cd /home/t1/Documents && touch get-pip.py && touch requirements.txt )")
 			ssh_client.exec_command (" wget --no-check-certificate  https://bootstrap.pypa.io/get-pip.py ") 
 			ssh_client.exec_command (" python2.7 -m install get-pip.py  ")
@@ -44,7 +38,7 @@ try:
 			ftp_client.close()
 			ssh_client.exec_command("python /home/t1/Documents/get-pip.py --user")
 			ssh_client.exec_command("python2.7 -m pip install  --user  -r /home/t1/Documents/requirements.txt")
-			ssh_client.exec_command("poweroff")
+			
 			ssh_client.exec_command("python2.7 -m pip install  --user  scipy")
 			ssh_client.exec_command("python2.7 -m pip install  --user   sklearn")
 		except:
