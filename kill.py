@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os.path
 from multiprocessing.pool import ThreadPool
 
 import paramiko
@@ -10,6 +11,7 @@ PASSWORD = "uni1"
 
 
 def create_client(hostname):
+    """Create a SSH connection to a given hostname."""
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh_client.connect(hostname=hostname, username=USERNAME, password=PASSWORD)
@@ -27,12 +29,12 @@ def install_python_modules(ssh_client):
     ftp_client = ssh_client.open_sftp()
 
     # Move over get-pip.py
-    local_getpip = "/home/jafer/lab_freak/get-pip.py"
+    local_getpip = os.path.expanduser("~/lab_freak/get-pip.py")
     remote_getpip = "/home/%s/Documents/get-pip.py" % USERNAME
     ftp_client.put(local_getpip, remote_getpip)
 
     # Move over requirements.txt
-    local_requirements = "/home/jafer/lab_freak/requirements.txt"
+    local_requirements = os.path.expanduser("~/lab_freak/requirements.txt")
     remote_requirements = "/home/%s/Documents/requirements.txt" % USERNAME
     ftp_client.put(local_requirements, remote_requirements)
 
