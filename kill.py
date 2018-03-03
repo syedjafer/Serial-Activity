@@ -67,7 +67,7 @@ def main():
     hostnames = [str(BASE_ADDRESS) + str(i) for i in range(30, 60)]
 
     with ThreadPool() as pool:
-        pool.map(kill_computer, hostnames)
+        pool.map(lambda hostname: worker(sys.argv[1], hostname), hostnames)
 
 
 if __name__ == "__main__":
