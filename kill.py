@@ -46,14 +46,17 @@ def install_python_modules(ssh_client):
 
 
 def worker(action, hostname):
-    ssh_client = create_client(hostname)
+    try:
+        ssh_client = create_client(hostname)
 
-    if action == "kill":
-        kill_computer(ssh_client)
-    elif action == "install":
-        install_python_modules(ssh_client)
-    else:
-        raise ValueError("Unknown action %r" % action)
+        if action == "kill":
+            kill_computer(ssh_client)
+        elif action == "install":
+            install_python_modules(ssh_client)
+        else:
+            raise ValueError("Unknown action %r" % action)
+    except BaseException as e:
+        print("Running the payload on %r failed with %r" % (hostname, action))
 
 
 def main():
