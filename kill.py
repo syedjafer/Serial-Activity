@@ -1,51 +1,74 @@
+#!/usr/bin/env python
+import sys
+import os.path
+from multiprocessing.pool import ThreadPool
+
 import paramiko
 
+BASE_ADDRESS = "192.168.7."
+USERNAME = "t1"
+PASSWORD = "uni1"
 
 
-
-username = "t1"
-ip = "192.168.7."
-host = [str(ip)+str(i) for i in range(30,60)]
-# host = [ip]
-password = "uni1"
-try:
-	for i in host:
-		print ("Trying for ",i)
-		#print (local_loc , remote)
-		try:
-			ssh_client = paramiko.SSHClient()
-			ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-			ssh_client.connect(hostname=i,username=username,password=password)
-			ssh_client.invoke_shell()
-			
-			ssh_client.exec_command("poweroff")#To only poweroff all systems comment all the upcoming lines . 
-			
-			ssh_client.exec_command ("(cd /home/t1/Documents && touch get-pip.py && touch requirements.txt )")
-			ssh_client.exec_command (" wget --no-check-certificate  https://bootstrap.pypa.io/get-pip.py ") 
-			ssh_client.exec_command (" python2.7 -m install get-pip.py  ")
-			
-			local_loc = os.popen("pwd").read()
-			ftp_client = ssh_client.open_sftp()
-			local_loc = "/home/jafer/lab_freak/get-pip.py"
-			remote = "/home/t1/Documents/get-pip.py"
-			
-		
-			ftp_client.put(local_loc,remote)
-			local = "/home/jafer/lab_freak/requirements.txt"
-			remote = "/home/t1/Documents/requirements.txt"
-			ftp_client.put(local,remote)
-			
-			ftp_client.close()
-			ssh_client.exec_command("python /home/t1/Documents/get-pip.py --user")
-			ssh_client.exec_command("python2.7 -m pip install  --user  -r /home/t1/Documents/requirements.txt")
-			
-			ssh_client.exec_command("python2.7 -m pip install  --user  scipy")
-			ssh_client.exec_command("python2.7 -m pip install  --user   sklearn")
-		except:
-			pass
+def create_client(hostname):
+    """Create a SSH connection to a given hostname."""
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(hostname=hostname, username=USERNAME, password=PASSWORD)
+    ssh_client.invoke_shell()
+    return ssh_client
 
 
+def kill_computer(ssh_client):
+    """Power off a computer."""
+    ssh_client.exec_command("poweroff")
 
-except Exception as e:
-	print (e)
-	pass
+
+def install_python_modules(ssh_client):
+    """Install the programs specified in requirements.txt"""
+    ftp_client = ssh_client.open_sftp()
+
+    # Move over get-pip.py
+    local_getpip = os.path.expanduser("~/lab_freak/get-pip.py")
+    remote_getpip = "/home/%s/Documents/get-pip.py" % USERNAME
+    ftp_client.put(local_getpip, remote_getpip)
+
+    # Move over requirements.txt
+    local_requirements = os.path.expanduser("~/lab_freak/requirements.txt")
+    remote_requirements = "/home/%s/Documents/requirements.txt" % USERNAME
+    ftp_client.put(local_requirements, remote_requirements)
+
+    ftp_client.close()
+
+    # Install pip and the desired modules.
+    ssh_client.exec_command("python %s --user" % remote_getpip)
+    ssh_client.exec_command("python -m pip install --user -r %s" % remote_requirements)
+
+
+def worker(action, hostname):
+    try:
+        ssh_client = create_client(hostname)
+
+        if action == "kill":
+            kill_computer(ssh_client)
+        elif action == "install":
+            install_python_modules(ssh_client)
+        else:
+            raise ValueError("Unknown action %r" % action)
+    except BaseException as e:
+        print("Running the payload on %r failed with %r" % (hostname, action))
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("USAGE: python kill.py ACTION")
+        sys.exit(1)
+
+    hostnames = [str(BASE_ADDRESS) + str(i) for i in range(30, 60)]
+
+    with ThreadPool() as pool:
+        pool.map(lambda hostname: worker(sys.argv[1], hostname), hostnames)
+
+
+if __name__ == "__main__":
+    main()
