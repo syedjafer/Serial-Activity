@@ -1,4 +1,4 @@
-# serial_installer-may_be_killer-
+# serial activity
 A serial installler in python , which may used to install packages in all systems in college labs or it could do some evil things .
 
 Install paramiko 
